@@ -7,9 +7,17 @@ import Link from "next/link";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("employee");
+  const [otp, setOtp] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // Mock OTP generation
+  const generateMockOtp = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,15 +25,60 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // In a real app, you would validate credentials with your backend
-      // For demo purposes, we'll use a simple check
-      if (email === "admin@example.com" && password === "password") {
-        // Set a token or session indicator
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userRole", "admin");
-        router.push("/dashboard");
+      // Mock credentials check
+      if (email === "admin@example.com" && password === "password" && role === "admin") {
+        const mockOtp = generateMockOtp();
+        localStorage.setItem("pendingOtp", mockOtp);
+        localStorage.setItem("pendingRole", role);
+        localStorage.setItem("pendingEmail", email);
+        setShowOtpInput(true);
+        alert(`Your OTP is: ${mockOtp}`); // In real app, this would be sent via email/SMS
+      } else if (email === "employee@example.com" && password === "password" && role === "employee") {
+        const mockOtp = generateMockOtp();
+        localStorage.setItem("pendingOtp", mockOtp);
+        localStorage.setItem("pendingRole", role);
+        localStorage.setItem("pendingEmail", email);
+        setShowOtpInput(true);
+        alert(`Your OTP is: ${mockOtp}`); // In real app, this would be sent via email/SMS
       } else {
         setError("Invalid credentials. Please try again.");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const storedOtp = localStorage.getItem("pendingOtp");
+      const storedRole = localStorage.getItem("pendingRole");
+      const storedEmail = localStorage.getItem("pendingEmail");
+
+      if (otp === storedOtp && storedRole && storedEmail) {
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("userRole", storedRole);
+        localStorage.setItem("userEmail", storedEmail);
+        
+        // Clear pending data
+        localStorage.removeItem("pendingOtp");
+        localStorage.removeItem("pendingRole");
+        localStorage.removeItem("pendingEmail");
+
+        // Redirect based on role
+        if (storedRole === "admin") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/employee/dashboard");
+        }
+      } else {
+        setError("Invalid OTP. Please try again.");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -38,7 +91,10 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      backdropFilter: 'blur(21px)',
+      background: 'rgba(255, 255, 255, 0.1)',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      backgroundImage: 'linear-gradient(to right,rgb(3, 9, 73),rgb(64, 47, 99))',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -77,18 +133,19 @@ export default function LoginPage() {
 
         {/* Card */}
         <div style={{
-          background: 'rgba(255, 255, 255, 0.9)',
-          backdropFilter: 'blur(20px)',
+          background: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
           borderRadius: '20px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
           overflow: 'hidden',
           position: 'relative',
           zIndex: 1,
         }}>
           {/* Card Header */}
           <div style={{
-            background: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
-            padding: '2.5rem 2rem',
+  background: 'linear-gradient(to right, rgb(3, 9, 73), rgb(64, 47, 99))',
+  padding: '2.5rem 2rem',
             textAlign: 'center',
             position: 'relative',
           }}>
@@ -159,178 +216,257 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleLogin}>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="email" style={{
-                  display: 'block',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: '#374151',
-                }}>
-                  Email Address
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: '0',
-                    bottom: '0',
-                    left: '0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    paddingLeft: '0.75rem',
-                    pointerEvents: 'none',
-                  }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '1.25rem', height: '1.25rem', color: '#9CA3AF' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                    </svg>
-                  </div>
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      paddingTop: '0.75rem',
-                      paddingBottom: '0.75rem',
-                      paddingLeft: '2.5rem',
-                      paddingRight: '0.75rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid #D1D5DB',
-                      fontSize: '0.875rem',
-                      transition: 'all 0.15s ease-in-out',
-                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                    }}
-                    placeholder="you@example.com"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label htmlFor="password" style={{
-                  display: 'block',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: '#374151',
-                }}>
-                  Password
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: '0',
-                    bottom: '0',
-                    left: '0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    paddingLeft: '0.75rem',
-                    pointerEvents: 'none',
-                  }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '1.25rem', height: '1.25rem', color: '#9CA3AF' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      paddingTop: '0.75rem',
-                      paddingBottom: '0.75rem',
-                      paddingLeft: '2.5rem',
-                      paddingRight: '0.75rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid #D1D5DB',
-                      fontSize: '0.875rem',
-                      transition: 'all 0.15s ease-in-out',
-                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                    }}
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '1.5rem',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <input
-                    id="remember_me"
-                    type="checkbox"
-                    style={{
-                      width: '1rem',
-                      height: '1rem',
-                      borderRadius: '0.25rem',
-                      borderColor: '#D1D5DB',
-                      color: '#4F46E5',
-                    }}
-                  />
-                  <label htmlFor="remember_me" style={{
-                    marginLeft: '0.5rem',
-                    fontSize: '0.875rem',
-                    color: '#4B5563',
-                  }}>
-                    Remember me
-                  </label>
-                </div>
-                <div>
-                  <a href="#" style={{
+            {!showOtpInput ? (
+              <form onSubmit={handleLogin}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label htmlFor="role" style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
                     fontSize: '0.875rem',
                     fontWeight: '500',
-                    color: '#4F46E5',
-                    textDecoration: 'none',
+                    color: 'white',
                   }}>
-                    Forgot password?
-                  </a>
+                    Role
+                  </label>
+                  <select
+                    id="role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '0.5rem',
+                      borderTop: '1px solid #D1D5DB',
+                      borderRight: '1px solid #D1D5DB',
+                      borderBottom: '1px solid #D1D5DB',
+                      borderLeft: '1px solid #D1D5DB',
+                      fontSize: '0.875rem',
+                      backgroundColor: 'white',
+                    }}
+                  >
+                    <option value="employee">Employee</option>
+                    <option value="admin">Admin</option>
+                  </select>
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  display: 'flex',
-                  width: '100%',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: 'white',
-                  backgroundColor: '#4F46E5',
-                  border: 'none',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.7 : 1,
-                  transition: 'all 0.15s ease-in-out',
-                }}
-              >
-                {loading ? (
-                  <svg style={{
-                    marginRight: '0.5rem',
-                    width: '1.25rem',
-                    height: '1.25rem',
-                    animation: 'spin 1s linear infinite',
-                  }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                ) : null}
-                Sign in
-              </button>
-            </form>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label htmlFor="email" style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: 'white',
+                  }}>
+                    Email Address
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <div style={{
+                      position: 'absolute',
+                      top: '0',
+                      bottom: '0',
+                      left: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      paddingLeft: '0.75rem',
+                      pointerEvents: 'none',
+                    }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '1.25rem', height: '1.25rem', color: '#9CA3AF' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                      </svg>
+                    </div>
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      style={{
+                        display: 'block',
+                        width: '88%',
+                        padding: '12px',
+                        paddingLeft: '2.5rem',
+                        borderRadius: '10px',
+                        borderTop: 'none',
+                        borderRight: 'none',
+                        borderBottom: 'none',
+                        borderLeft: 'none',
+                        outline: 'none',
+                        backgroundColor: '#f4f4f4',
+                        fontSize: '0.875rem',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                      }}
+                      placeholder="you@example.com"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label htmlFor="password" style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: 'white',
+                  }}>
+                    Password
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <div style={{
+                      position: 'absolute',
+                      top: '0',
+                      bottom: '0',
+                      left: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      paddingLeft: '0.75rem',
+                      pointerEvents: 'none',
+                    }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '1.25rem', height: '1.25rem', color: '#9CA3AF' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      style={{
+                        display: 'block',
+                        width: '88%',
+                        padding: '12px',
+                        paddingLeft: '2.5rem',
+                        borderRadius: '10px',
+                        borderTop: 'none',
+                        borderRight: 'none',
+                        borderBottom: 'none',
+                        borderLeft: 'none',
+                        outline: 'none',
+                        backgroundColor: '#f4f4f4',
+                        fontSize: '0.875rem',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                      }}
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: 'white',
+                    backgroundColor: '#4F46E5',
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    borderBottom: 'none',
+                    borderLeft: 'none',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1,
+                    transition: 'all 0.15s ease-in-out',
+                  }}
+                >
+                  {loading ? (
+                    <svg style={{
+                      marginRight: '0.5rem',
+                      width: '1.25rem',
+                      height: '1.25rem',
+                      animation: 'spin 1s linear infinite',
+                    }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : null}
+                  Continue
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleOtpVerification}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label htmlFor="otp" style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: 'white',
+                  }}>
+                    Enter OTP
+                  </label>
+                  <input
+                    id="otp"
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: '0.5rem',
+                      borderTop: '1px solid #D1D5DB',
+                      borderRight: '1px solid #D1D5DB',
+                      borderBottom: '1px solid #D1D5DB',
+                      borderLeft: '1px solid #D1D5DB',
+                      fontSize: '0.875rem',
+                      transition: 'all 0.15s ease-in-out',
+                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                    }}
+                    placeholder="Enter 6-digit OTP"
+                    required
+                    maxLength={6}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: 'white',
+                    backgroundColor: '#4F46E5',
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    borderBottom: 'none',
+                    borderLeft: 'none',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1,
+                    transition: 'all 0.15s ease-in-out',
+                  }}
+                >
+                  {loading ? (
+                    <svg style={{
+                      marginRight: '0.5rem',
+                      width: '1.25rem',
+                      height: '1.25rem',
+                      animation: 'spin 1s linear infinite',
+                    }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : null}
+                  Verify OTP
+                </button>
+              </form>
+            )}
 
             <div style={{
               marginTop: '2rem',
@@ -338,7 +474,7 @@ export default function LoginPage() {
             }}>
               <p style={{
                 fontSize: '0.875rem',
-                color: '#6B7280',
+                color: 'black',
                 marginBottom: '0.5rem',
               }}>Demo login credentials:</p>
               <div style={{
@@ -350,7 +486,8 @@ export default function LoginPage() {
                 fontSize: '0.875rem',
                 color: '#374151',
               }}>
-                admin@example.com / password
+                Admin: admin@example.com / password<br />
+                Employee: employee@example.com / password
               </div>
             </div>
           </div>
