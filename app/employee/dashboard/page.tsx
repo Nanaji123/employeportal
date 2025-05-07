@@ -29,11 +29,25 @@ interface Payslip {
   status: "paid" | "pending";
 }
 
+interface EmployeeProfile {
+  name: string;
+  email: string;
+  role: string;
+  photo: string | null;
+  department: string;
+  phone: string;
+  joinDate: string;
+  address: string;
+}
+
 export default function EmployeeDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("attendance");
   const [loading, setLoading] = useState(true);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
   const [leaveForm, setLeaveForm] = useState({
     type: "",
     startDate: "",
@@ -80,13 +94,14 @@ export default function EmployeeDashboard() {
     }
   ]);
 
-  const [profile, setProfile] = useState({
+  const [employeeProfile, setEmployeeProfile] = useState<EmployeeProfile>({
     name: "John Doe",
     email: "john@example.com",
+    role: "Employee",
+    photo: null,
     department: "Engineering",
-    role: "Senior Developer",
-    joinDate: "2023-01-15",
     phone: "+1 234 567 8900",
+    joinDate: "2023-01-15",
     address: "123 Tech Street, Silicon Valley"
   });
 
@@ -120,6 +135,21 @@ export default function EmployeeDashboard() {
     setLeaveForm({ type: "", startDate: "", endDate: "", reason: "" });
   };
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEmployeeProfile(prev => ({
+          ...prev,
+          photo: reader.result as string
+        }));
+        setShowPhotoUploadModal(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -146,108 +176,312 @@ export default function EmployeeDashboard() {
       minHeight: '100vh',
       background: 'linear-gradient(to right, rgb(3, 9, 73), rgb(64, 47, 99))',
       fontFamily: 'Inter, system-ui, sans-serif',
+      display: 'flex',
+      position: 'relative',
+      width: '100%',
+      overflow: 'hidden',
     }}>
-      {/* Navigation */}
-      <nav style={{
+      {/* Top Navbar */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        left: 0,
+        width: '100%',
+        height: '70px',
         background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 2rem',
+        zIndex: 90,
       }}>
         <div style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '1rem 2rem',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
+          gap: '1rem',
+          marginLeft: isSidebarOpen ? '270px' : '20px',
+          transition: 'margin-left 0.3s ease',
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-          }}>
-            <div style={{
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            style={{
               width: '40px',
               height: '40px',
-              borderRadius: '12px',
-              background: 'white',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '24px', height: '24px', color: '#4f46e5' }} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h1 style={{
-              color: 'white',
-              fontSize: '1.25rem',
-              fontWeight: '600',
-            }}>Employee Dashboard</h1>
-          </div>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '0.5rem 1rem',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              color: 'white',
-              background: 'rgba(239, 68, 68, 0.9)',
-              borderRadius: '0.5rem',
-              border: 'none',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              backdropFilter: 'blur(4px)',
+              transition: 'all 0.3s ease',
+              color: 'white',
             }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 1)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)'}
           >
-            Logout
+            {isSidebarOpen ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6"/>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            )}
           </button>
+          <span style={{
+            color: 'white',
+            fontSize: '1.25rem',
+            fontWeight: '600',
+          }}>Employee</span>
+          <span style={{
+            color: 'rgba(255, 255, 255, 0.5)',
+            fontSize: '1.25rem',
+          }}>/</span>
+          <span style={{
+            color: 'white',
+            fontSize: '1.25rem',
+            fontWeight: '500',
+            textTransform: 'capitalize',
+          }}>
+            {activeTab === 'attendance' && 'Attendance'}
+            {activeTab === 'leave' && 'Leave'}
+            {activeTab === 'payslip' && 'Payslip'}
+            {activeTab === 'profile' && 'Profile'}
+          </span>
         </div>
-      </nav>
+
+        <div style={{
+          marginRight: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+        }}>
+          {/* Profile Icon */}
+          <div style={{ 
+            position: 'relative',
+            marginRight: '1rem'
+          }}>
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: employeeProfile.photo ? 'none' : '#4F46E5',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                padding: 0,
+              }}
+            >
+              {employeeProfile.photo ? (
+                <img 
+                  src={employeeProfile.photo} 
+                  alt="Profile" 
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '24px', height: '24px', color: 'white' }} viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+
+            {/* Profile Menu Popup */}
+            {showProfileMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '0.5rem',
+                background: '#1E1B4B',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '0.5rem',
+                padding: '0.5rem',
+                minWidth: '200px',
+                zIndex: 100,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              }}>
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  marginBottom: '0.5rem',
+                }}>
+                  <div style={{
+                    color: 'white',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                  }}>{employeeProfile.name}</div>
+                  <div style={{
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    fontSize: '0.75rem',
+                  }}>{employeeProfile.email}</div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowPhotoUploadModal(true);
+                    setShowProfileMenu(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: 'none',
+                    border: 'none',
+                    color: 'white',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    borderRadius: '0.25rem',
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                  Update Photo
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: 'none',
+                    border: 'none',
+                    color: '#EF4444',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    borderRadius: '0.25rem',
+                    marginTop: '0.25rem',
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <div style={{
+        width: isSidebarOpen ? '250px' : '0',
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(12px)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.2)',
+        padding: isSidebarOpen ? '1.5rem' : '0',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'all 0.3s ease',
+        overflow: 'hidden',
+        position: 'fixed',
+        height: '100vh',
+        left: 0,
+        top: 0,
+        zIndex: 100,
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          marginBottom: '2rem',
+          opacity: isSidebarOpen ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '12px',
+            background: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          }}>
+            <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '24px', height: '24px', color: '#4f46e5' }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h1 style={{
+            color: 'white',
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            whiteSpace: 'nowrap',
+          }}>Employee Dashboard</h1>
+        </div>
+
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          opacity: isSidebarOpen ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+        }}>
+          {["attendance", "leave", "payslip", "profile"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '0.75rem 1rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: activeTab === tab ? 'white' : 'rgba(255, 255, 255, 0.7)',
+                background: activeTab === tab ? 'rgba(79, 70, 229, 0.2)' : 'transparent',
+                borderRadius: '0.5rem',
+                border: 'none',
+                cursor: 'pointer',
+                textTransform: 'capitalize',
+                textAlign: 'left',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = activeTab === tab ? 'rgba(79, 70, 229, 0.3)' : 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = activeTab === tab ? 'rgba(79, 70, 229, 0.2)' : 'transparent'}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Main Content */}
       <div style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
+        flex: 1,
+        marginLeft: isSidebarOpen ? '270px' : '20px',
+        transition: 'margin-left 0.3s ease',
+        minHeight: '100vh',
+        width: `calc(100% - ${isSidebarOpen ? '270px' : '20px'})`,
         padding: '2rem',
+        marginTop: '70px',
+        position: 'fixed',
+        right: 0,
+        overflowY: 'auto',
+        boxSizing: 'border-box',
       }}>
-        {/* Tabs */}
-        <div style={{
-          marginBottom: '2rem',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        }}>
-          <div style={{
-            display: 'flex',
-            gap: '2rem',
-          }}>
-            {["attendance", "leave", "payslip", "profile"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  padding: '1rem 0',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: activeTab === tab ? 'white' : 'rgba(255, 255, 255, 0.7)',
-                  borderBottom: activeTab === tab ? '2px solid #4F46E5' : 'none',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseOver={(e) => e.currentTarget.style.color = 'white'}
-                onMouseOut={(e) => e.currentTarget.style.color = activeTab === tab ? 'white' : 'rgba(255, 255, 255, 0.7)'}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Attendance Tab */}
         {activeTab === "attendance" && (
           <div style={{
@@ -582,8 +816,8 @@ export default function EmployeeDashboard() {
                   }}>Name</label>
                   <input
                     type="text"
-                    value={profile.name}
-                    onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                    value={employeeProfile.name}
+                    onChange={(e) => setEmployeeProfile(prev => ({ ...prev, name: e.target.value }))}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -605,8 +839,8 @@ export default function EmployeeDashboard() {
                   }}>Email</label>
                   <input
                     type="email"
-                    value={profile.email}
-                    onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                    value={employeeProfile.email}
+                    onChange={(e) => setEmployeeProfile(prev => ({ ...prev, email: e.target.value }))}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -628,8 +862,8 @@ export default function EmployeeDashboard() {
                   }}>Phone</label>
                   <input
                     type="tel"
-                    value={profile.phone}
-                    onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                    value={employeeProfile.phone}
+                    onChange={(e) => setEmployeeProfile(prev => ({ ...prev, phone: e.target.value }))}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -660,8 +894,8 @@ export default function EmployeeDashboard() {
                   }}>Department</label>
                   <input
                     type="text"
-                    value={profile.department}
-                    onChange={(e) => setProfile(prev => ({ ...prev, department: e.target.value }))}
+                    value={employeeProfile.department}
+                    onChange={(e) => setEmployeeProfile(prev => ({ ...prev, department: e.target.value }))}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -683,8 +917,8 @@ export default function EmployeeDashboard() {
                   }}>Role</label>
                   <input
                     type="text"
-                    value={profile.role}
-                    onChange={(e) => setProfile(prev => ({ ...prev, role: e.target.value }))}
+                    value={employeeProfile.role}
+                    onChange={(e) => setEmployeeProfile(prev => ({ ...prev, role: e.target.value }))}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -706,7 +940,7 @@ export default function EmployeeDashboard() {
                   }}>Join Date</label>
                   <input
                     type="text"
-                    value={profile.joinDate}
+                    value={employeeProfile.joinDate}
                     disabled
                     style={{
                       width: '100%',
@@ -947,6 +1181,115 @@ export default function EmployeeDashboard() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Photo Upload Modal */}
+        {showPhotoUploadModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}>
+            <div style={{
+              background: '#1E1B4B',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '1rem',
+              padding: '2rem',
+              width: '100%',
+              maxWidth: '400px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            }}>
+              <h2 style={{
+                color: 'white',
+                fontSize: '1.5rem',
+                fontWeight: '600',
+                marginBottom: '1.5rem',
+              }}>Update Profile Photo</h2>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1.5rem',
+              }}>
+                <div style={{
+                  width: '150px',
+                  height: '150px',
+                  borderRadius: '50%',
+                  background: employeeProfile.photo ? 'none' : '#4F46E5',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                }}>
+                  {employeeProfile.photo ? (
+                    <img 
+                      src={employeeProfile.photo} 
+                      alt="Profile Preview" 
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '64px', height: '64px', color: 'white' }} viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+
+                <label style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#4F46E5',
+                  color: 'white',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                }}>
+                  Choose Photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '1rem',
+                justifyContent: 'flex-end',
+                marginTop: '2rem',
+              }}>
+                <button
+                  onClick={() => setShowPhotoUploadModal(false)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: 'white',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '0.5rem',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
