@@ -4,122 +4,170 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// Type declarations
+interface EmployeeStats {
+  id: string;
+  name: string;
+  department: string;
+  workingDays: number;
+  absentDays: number;
+  lateDays: number;
+  totalWorkingHours: number;
+  avgWorkingHours: number;
+  lastLogin: string;
+  lastLogout: string;
+}
+
+interface TimeLog {
+  date: string;
+  checkIn: string;
+  checkOut: string;
+  workingHours: number;
+  status: "present" | "late" | "absent";
+}
+
+interface DepartmentStats {
+  name: string;
+  employeeCount: number;
+  avgAttendance: number;
+  avgWorkingHours: number;
+  lateCount: number;
+  absentCount: number;
+}
+
 // Mock data
-const attendanceData = [
-  { month: 'Jan', present: 21, absent: 2, late: 3 },
-  { month: 'Feb', present: 20, absent: 0, late: 2 },
-  { month: 'Mar', present: 22, absent: 1, late: 0 },
-  { month: 'Apr', present: 21, absent: 1, late: 1 },
-  { month: 'May', present: 20, absent: 0, late: 4 },
+const employeeStats: EmployeeStats[] = [
+  {
+    id: "1",
+    name: "John Doe",
+    department: "Sales",
+    workingDays: 22,
+    absentDays: 1,
+    lateDays: 2,
+    totalWorkingHours: 176,
+    avgWorkingHours: 8.0,
+    lastLogin: "2024-03-15 09:05:23",
+    lastLogout: "2024-03-15 17:30:10"
+  },
+  {
+    id: "2",
+    name: "Jane Smith",
+    department: "Marketing",
+    workingDays: 21,
+    absentDays: 2,
+    lateDays: 3,
+    totalWorkingHours: 168,
+    avgWorkingHours: 8.0,
+    lastLogin: "2024-03-15 09:15:30",
+    lastLogout: "2024-03-15 17:45:12"
+  },
+  {
+    id: "3",
+    name: "Mike Johnson",
+    department: "Development",
+    workingDays: 23,
+    absentDays: 0,
+    lateDays: 1,
+    totalWorkingHours: 184,
+    avgWorkingHours: 8.0,
+    lastLogin: "2024-03-15 08:55:43",
+    lastLogout: "2024-03-15 17:00:08"
+  }
 ];
 
-const payrollData = [
-  { month: 'Jan', salary: 5000, bonus: 200, deductions: 350 },
-  { month: 'Feb', salary: 5000, bonus: 0, deductions: 350 },
-  { month: 'Mar', salary: 5000, bonus: 500, deductions: 350 },
-  { month: 'Apr', salary: 5000, bonus: 0, deductions: 350 },
-  { month: 'May', salary: 5000, bonus: 300, deductions: 350 },
+const timeLogs: TimeLog[] = [
+  { date: "2024-03-15", checkIn: "09:05:23", checkOut: "17:30:10", workingHours: 8.4, status: "present" },
+  { date: "2024-03-14", checkIn: "09:30:05", checkOut: "17:45:12", workingHours: 8.25, status: "late" },
+  { date: "2024-03-13", checkIn: "08:55:43", checkOut: "17:00:08", workingHours: 8.1, status: "present" },
+  { date: "2024-03-12", checkIn: "09:15:30", checkOut: "17:20:15", workingHours: 8.1, status: "late" },
+  { date: "2024-03-11", checkIn: "08:45:00", checkOut: "17:10:00", workingHours: 8.4, status: "present" }
 ];
 
-const topPerformers = [
-  { id: 1, name: 'John Doe', photo: '👨‍💼', department: 'Sales', attendanceRate: 98, efficiency: 95 },
-  { id: 2, name: 'Jane Smith', photo: '👩‍💼', department: 'Marketing', attendanceRate: 100, efficiency: 92 },
-  { id: 3, name: 'Robert Johnson', photo: '👨‍💻', department: 'IT', attendanceRate: 97, efficiency: 96 },
-  { id: 4, name: 'Emily Wilson', photo: '👩‍💻', department: 'Development', attendanceRate: 99, efficiency: 94 },
-];
-
-const departmentData = [
-  { name: 'Sales', employeeCount: 12, avgAttendance: 95, avgEfficiency: 88 },
-  { name: 'Marketing', employeeCount: 8, avgAttendance: 93, avgEfficiency: 85 },
-  { name: 'IT', employeeCount: 15, avgAttendance: 97, avgEfficiency: 92 },
-  { name: 'Development', employeeCount: 20, avgAttendance: 96, avgEfficiency: 90 },
-  { name: 'HR', employeeCount: 5, avgAttendance: 98, avgEfficiency: 89 },
+const departmentStats: DepartmentStats[] = [
+  { name: 'Sales', employeeCount: 12, avgAttendance: 95, avgWorkingHours: 8.2, lateCount: 3, absentCount: 1 },
+  { name: 'Marketing', employeeCount: 8, avgAttendance: 93, avgWorkingHours: 8.0, lateCount: 4, absentCount: 2 },
+  { name: 'IT', employeeCount: 15, avgAttendance: 97, avgWorkingHours: 8.5, lateCount: 2, absentCount: 0 },
+  { name: 'Development', employeeCount: 20, avgAttendance: 96, avgWorkingHours: 8.3, lateCount: 3, absentCount: 1 },
+  { name: 'HR', employeeCount: 5, avgAttendance: 98, avgWorkingHours: 8.1, lateCount: 1, absentCount: 0 }
 ];
 
 export default function AnalyticsPage() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("May");
+  const [selectedMonth, setSelectedMonth] = useState("March");
+  const [userName, setUserName] = useState("Admin User");
+  const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    if (!isLoggedIn) {
-      router.push("/");
-      return;
-    }
-
-    // In a real app, you would fetch user data from your backend
-    setUserName("Admin User");
-    setIsLoading(false);
-  }, [router]);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-50">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full bg-blue-200 mb-3"></div>
-          <div className="h-4 w-24 bg-blue-200 rounded"></div>
-        </div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(to right, rgb(3, 9, 73), rgb(64, 47, 99))',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          border: '4px solid rgba(255, 255, 255, 0.1)',
+          borderTopColor: '#4F46E5',
+          animation: 'spin 1s linear infinite',
+        }}></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(to right, rgb(3, 9, 73), rgb(64, 47, 99))',
+      fontFamily: 'Inter, system-ui, sans-serif',
+    }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 mr-3" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
-            </svg>
-            <h1 className="text-2xl font-bold text-gray-900">Employee Portal</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                {userName.charAt(0)}
-              </div>
-              <span className="text-gray-700 font-medium">{userName}</span>
-            </div>
-            <Link
-              href="/dashboard"
-              className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors duration-200 flex items-center"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Dashboard
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Comprehensive overview of employee attendance and payroll metrics
-            </p>
-          </div>
-          <div className="mt-4 md:mt-0">
-            <select 
-              value={selectedMonth} 
+      <header style={{
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+      }}>
+        <div style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '1.5rem 2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <h1 style={{
+            color: 'white',
+            fontSize: '1.5rem',
+            fontWeight: '600',
+          }}>Employee Analytics</h1>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+          }}>
+            <select
+              value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                color: 'white',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
             >
               <option>January</option>
               <option>February</option>
@@ -129,312 +177,415 @@ export default function AnalyticsPage() {
             </select>
           </div>
         </div>
+      </header>
 
+      {/* Main Content */}
+      <main style={{
+        maxWidth: '1280px',
+        margin: '0 auto',
+        padding: '2rem',
+      }}>
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-indigo-500 rounded-md p-3">
-                  <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: '1.5rem',
+          marginBottom: '2rem',
+        }}>
+          {[
+            { title: "Total Employees", value: "60", color: "#4F46E5", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
+            { title: "Average Attendance", value: "95.8%", color: "#10B981", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+            { title: "Average Working Hours", value: "8.2 hrs/day", color: "#F59E0B", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
+            { title: "Late Arrivals", value: "13", color: "#EF4444", icon: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" }
+          ].map((stat, index) => (
+            <div key={index} style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '1rem',
+              padding: '1.5rem',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              transition: 'transform 0.2s ease',
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+              }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: stat.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
                   </svg>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Employees</dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900">124</div>
-                    </dd>
-                  </dl>
+                <div>
+                  <h3 style={{
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    marginBottom: '0.25rem',
+                  }}>{stat.title}</h3>
+                  <p style={{
+                    color: stat.color,
+                    fontSize: '1.5rem',
+                    fontWeight: '600',
+                  }}>{stat.value}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-gray-50 px-4 py-4 sm:px-6">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">View all employees</a>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
-                  <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Attendance Rate</dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900">95.7%</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 px-4 py-4 sm:px-6">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-green-600 hover:text-green-500">View attendance details</a>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
-                  <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Average Working Hours</dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900">8.2 hrs/day</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 px-4 py-4 sm:px-6">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-yellow-600 hover:text-yellow-500">View time logs</a>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
-                  <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Payroll</dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900">{formatCurrency(620000)}</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 px-4 py-4 sm:px-6">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-purple-600 hover:text-purple-500">View payroll details</a>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Main Stats Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Attendance Chart */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Attendance Overview</h3>
-              <div className="flex space-x-3">
-                <div className="flex items-center">
-                  <span className="h-3 w-3 bg-blue-500 rounded-full mr-1"></span>
-                  <span className="text-xs text-gray-500">Present</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="h-3 w-3 bg-red-500 rounded-full mr-1"></span>
-                  <span className="text-xs text-gray-500">Absent</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="h-3 w-3 bg-yellow-500 rounded-full mr-1"></span>
-                  <span className="text-xs text-gray-500">Late</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="h-72 flex items-end justify-between">
-              {attendanceData.map((data, idx) => (
-                <div key={idx} className="flex flex-col items-center">
-                  <div className="relative h-60 w-16 flex flex-col-reverse">
-                    {/* Late */}
-                    <div 
-                      className="w-full bg-yellow-500 rounded-t-sm"
-                      style={{ height: `${(data.late / 30) * 100}%` }}
-                    ></div>
-                    {/* Absent */}
-                    <div 
-                      className="w-full bg-red-500"
-                      style={{ height: `${(data.absent / 30) * 100}%` }}
-                    ></div>
-                    {/* Present */}
-                    <div 
-                      className="w-full bg-blue-500"
-                      style={{ height: `${(data.present / 30) * 100}%` }}
-                    ></div>
-                  </div>
-                  <div className="mt-2 text-xs font-medium text-gray-500">{data.month}</div>
-                </div>
-              ))}
-            </div>
+        {/* Employee Statistics */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '1rem',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          marginBottom: '2rem',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '1.5rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          }}>
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.125rem',
+              fontWeight: '600',
+            }}>Employee Statistics</h3>
           </div>
-
-          {/* Payroll Chart */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Payroll Overview</h3>
-              <div className="flex space-x-3">
-                <div className="flex items-center">
-                  <span className="h-3 w-3 bg-indigo-500 rounded-full mr-1"></span>
-                  <span className="text-xs text-gray-500">Salary</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="h-3 w-3 bg-green-500 rounded-full mr-1"></span>
-                  <span className="text-xs text-gray-500">Bonus</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="h-3 w-3 bg-red-300 rounded-full mr-1"></span>
-                  <span className="text-xs text-gray-500">Deductions</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="h-72 flex items-end justify-between">
-              {payrollData.map((data, idx) => (
-                <div key={idx} className="flex flex-col items-center">
-                  <div className="relative h-60 w-16">
-                    {/* Main bar */}
-                    <div className="absolute bottom-0 w-full h-full flex flex-col-reverse">
-                      {/* Salary */}
-                      <div 
-                        className="w-full bg-indigo-500 rounded-t-sm"
-                        style={{ height: `${(data.salary / 6000) * 100}%` }}
-                      ></div>
-                    </div>
-                    {/* Bonus bar */}
-                    {data.bonus > 0 && (
-                      <div 
-                        className="absolute bottom-0 right-0 w-1/3 bg-green-500 rounded-t-sm"
-                        style={{ 
-                          height: `${(data.bonus / 1000) * 20}%`,
-                          transform: 'translateX(120%)' 
-                        }}
-                      ></div>
-                    )}
-                    {/* Deduction bar */}
-                    <div 
-                      className="absolute bottom-0 left-0 w-1/3 bg-red-300 rounded-t-sm"
-                      style={{ 
-                        height: `${(data.deductions / 1000) * 20}%`,
-                        transform: 'translateX(-120%)' 
-                      }}
-                    ></div>
-                  </div>
-                  <div className="mt-2 text-xs font-medium text-gray-500">{data.month}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Department Performance and Top Performers */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Department Performance */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-5 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Department Performance</h3>
-            </div>
-            <div className="p-6">
-              <div className="flow-root">
-                <ul className="-my-5 divide-y divide-gray-200">
-                  {departmentData.map((dept, idx) => (
-                    <li key={idx} className="py-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{dept.name}</p>
-                          <p className="text-sm text-gray-500">{dept.employeeCount} employees</p>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div>
-                            <p className="text-xs text-gray-500">Attendance</p>
-                            <div className="flex items-center">
-                              <span className="text-sm font-medium text-gray-900">{dept.avgAttendance}%</span>
-                              <div className="ml-2 w-16 h-2 bg-gray-200 rounded-full">
-                                <div 
-                                  className="h-full bg-green-500 rounded-full" 
-                                  style={{ width: `${dept.avgAttendance}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Efficiency</p>
-                            <div className="flex items-center">
-                              <span className="text-sm font-medium text-gray-900">{dept.avgEfficiency}%</span>
-                              <div className="ml-2 w-16 h-2 bg-gray-200 rounded-full">
-                                <div 
-                                  className="h-full bg-blue-500 rounded-full" 
-                                  style={{ width: `${dept.avgEfficiency}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+            }}>
+              <thead>
+                <tr style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                }}>
+                  {["Employee", "Department", "Working Days", "Absent Days", "Late Days", "Total Hours", "Last Login", "Last Logout"].map((header) => (
+                    <th key={header} style={{
+                      padding: '1rem',
+                      textAlign: 'left',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}>{header}</th>
                   ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Top Performers */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-5 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Top Performers</h3>
-            </div>
-            <div className="p-6">
-              <ul className="divide-y divide-gray-200">
-                {topPerformers.map((employee) => (
-                  <li key={employee.id} className="py-4 flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-xl">
-                      {employee.photo}
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <p className="text-sm font-medium text-gray-900">{employee.name}</p>
-                      <p className="text-sm text-gray-500">{employee.department}</p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-center">
-                        <p className="text-xs text-gray-500">Attendance</p>
-                        <p className="text-sm font-medium text-gray-900">{employee.attendanceRate}%</p>
+                </tr>
+              </thead>
+              <tbody>
+                {employeeStats.map((employee) => (
+                  <tr key={employee.id} style={{
+                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}>
+                    <td style={{ padding: '1rem' }}>
+                      <div>
+                        <div style={{
+                          color: 'white',
+                          fontSize: '0.875rem',
+                          fontWeight: '500',
+                        }}>{employee.name}</div>
                       </div>
-                      <div className="text-center">
-                        <p className="text-xs text-gray-500">Efficiency</p>
-                        <p className="text-sm font-medium text-gray-900">{employee.efficiency}%</p>
-                      </div>
-                      <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </li>
+                    </td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{employee.department}</td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{employee.workingDays}</td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{employee.absentDays}</td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{employee.lateDays}</td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{employee.totalWorkingHours}</td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{employee.lastLogin}</td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{employee.lastLogout}</td>
+                  </tr>
                 ))}
-              </ul>
-            </div>
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 flex items-center justify-center">
-                  View all employees
-                  <svg className="h-5 w-5 ml-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </a>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Time Logs */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '1rem',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          marginBottom: '2rem',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '1.5rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          }}>
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.125rem',
+              fontWeight: '600',
+            }}>Detailed Time Logs</h3>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+            }}>
+              <thead>
+                <tr style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                }}>
+                  {["Date", "Check In", "Check Out", "Working Hours", "Status"].map((header) => (
+                    <th key={header} style={{
+                      padding: '1rem',
+                      textAlign: 'left',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}>{header}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {timeLogs.map((log, idx) => (
+                  <tr key={idx} style={{
+                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{log.date}</td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{log.checkIn}</td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{log.checkOut}</td>
+                    <td style={{
+                      padding: '1rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}>{log.workingHours} hrs</td>
+                    <td style={{ padding: '1rem' }}>
+                      <span style={{
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.75rem',
+                        fontWeight: '500',
+                        background: log.status === "present" ? 'rgba(16, 185, 129, 0.2)' :
+                                  log.status === "late" ? 'rgba(245, 158, 11, 0.2)' :
+                                  'rgba(239, 68, 68, 0.2)',
+                        color: log.status === "present" ? '#10B981' :
+                              log.status === "late" ? '#F59E0B' :
+                              '#EF4444',
+                      }}>
+                        {log.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Department Performance */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '1rem',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '1.5rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          }}>
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.125rem',
+              fontWeight: '600',
+            }}>Department Performance</h3>
+          </div>
+          <div style={{ padding: '1.5rem' }}>
+            {departmentStats.map((dept, idx) => (
+              <div key={idx} style={{
+                padding: '1.5rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '0.75rem',
+                marginBottom: idx !== departmentStats.length - 1 ? '1rem' : 0,
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem',
+                }}>
+                  <div>
+                    <h4 style={{
+                      color: 'white',
+                      fontSize: '1rem',
+                      fontWeight: '500',
+                      marginBottom: '0.25rem',
+                    }}>{dept.name}</h4>
+                    <p style={{
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      fontSize: '0.875rem',
+                    }}>{dept.employeeCount} employees</p>
+                  </div>
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '1.5rem',
+                }}>
+                  <div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '0.5rem',
+                    }}>
+                      <span style={{
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '0.875rem',
+                      }}>Attendance</span>
+                      <span style={{
+                        color: '#10B981',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                      }}>{dept.avgAttendance}%</span>
+                    </div>
+                    <div style={{
+                      height: '6px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '3px',
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        width: `${dept.avgAttendance}%`,
+                        height: '100%',
+                        background: '#10B981',
+                        borderRadius: '3px',
+                      }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '0.5rem',
+                    }}>
+                      <span style={{
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '0.875rem',
+                      }}>Working Hours</span>
+                      <span style={{
+                        color: '#F59E0B',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                      }}>{dept.avgWorkingHours} hrs</span>
+                    </div>
+                    <div style={{
+                      height: '6px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '3px',
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        width: `${(dept.avgWorkingHours / 10) * 100}%`,
+                        height: '100%',
+                        background: '#F59E0B',
+                        borderRadius: '3px',
+                      }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '0.5rem',
+                    }}>
+                      <span style={{
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '0.875rem',
+                      }}>Late/Absent</span>
+                      <div style={{
+                        display: 'flex',
+                        gap: '0.5rem',
+                      }}>
+                        <span style={{
+                          color: '#F59E0B',
+                          fontSize: '0.875rem',
+                          fontWeight: '500',
+                        }}>{dept.lateCount}</span>
+                        <span style={{
+                          color: 'rgba(255, 255, 255, 0.3)',
+                        }}>/</span>
+                        <span style={{
+                          color: '#EF4444',
+                          fontSize: '0.875rem',
+                          fontWeight: '500',
+                        }}>{dept.absentCount}</span>
+                      </div>
+                    </div>
+                    <div style={{
+                      height: '6px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '3px',
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        width: `${((dept.lateCount + dept.absentCount) / dept.employeeCount) * 100}%`,
+                        height: '100%',
+                        background: 'linear-gradient(to right, #F59E0B, #EF4444)',
+                        borderRadius: '3px',
+                      }}></div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </main>

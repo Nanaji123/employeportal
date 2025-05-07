@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Employee {
   id: string;
@@ -490,58 +491,32 @@ export default function AdminDashboard() {
             borderRadius: '12px',
             background: 'white',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            gap: '2rem',
           }}>
-            <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '24px', height: '24px', color: '#4f46e5' }} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-            </svg>
+            {["overview", "employees", "attendance", "leaves", "payroll", "reports"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  padding: '1rem 0',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: activeTab === tab ? 'white' : 'rgba(255, 255, 255, 0.7)',
+                  borderBottom: activeTab === tab ? '2px solid #4F46E5' : 'none',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textTransform: 'capitalize',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = 'white'}
+                onMouseOut={(e) => e.currentTarget.style.color = activeTab === tab ? 'white' : 'rgba(255, 255, 255, 0.7)'}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-          <h1 style={{
-            color: 'white',
-            fontSize: '1.25rem',
-            fontWeight: '600',
-            whiteSpace: 'nowrap',
-          }}>Admin Dashboard</h1>
         </div>
-
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem',
-          opacity: isSidebarOpen ? 1 : 0,
-          transition: 'opacity 0.3s ease',
-        }}>
-          {["overview", "employees", "attendance", "leaves", "payroll", "reports"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                padding: '0.75rem 1rem',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                color: activeTab === tab ? 'white' : 'rgba(255, 255, 255, 0.7)',
-                background: activeTab === tab ? 'rgba(79, 70, 229, 0.2)' : 'transparent',
-                borderRadius: '0.5rem',
-                border: 'none',
-                cursor: 'pointer',
-                textTransform: 'capitalize',
-                textAlign: 'left',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = activeTab === tab ? 'rgba(79, 70, 229, 0.3)' : 'rgba(255, 255, 255, 0.1)'}
-              onMouseOut={(e) => e.currentTarget.style.background = activeTab === tab ? 'rgba(79, 70, 229, 0.2)' : 'transparent'}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Main Content */}
       <div style={{
@@ -1087,202 +1062,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* Profile Tab */}
-        {activeTab === "profile" && (
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: '1rem',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            padding: '2rem',
-          }}>
-            <h3 style={{
-              color: 'white',
-              fontSize: '1.125rem',
-              fontWeight: '600',
-              marginBottom: '2rem',
-            }}>Profile Settings</h3>
-            
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '2rem',
-            }}>
-              <div>
-                <h4 style={{
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  fontSize: '1rem',
-                  fontWeight: '500',
-                  marginBottom: '1rem',
-                }}>Profile Photo</h4>
-                
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '1rem',
-                }}>
-                  <div style={{
-                    width: '150px',
-                    height: '150px',
-                    borderRadius: '50%',
-                    background: adminProfile.photo ? 'none' : '#4F46E5',
-                    border: '2px solid rgba(255, 255, 255, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden',
-                  }}>
-                    {adminProfile.photo ? (
-                      <img 
-                        src={adminProfile.photo} 
-                        alt="Profile" 
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '64px', height: '64px', color: 'white' }} viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => setShowPhotoUploadModal(true)}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: '#4F46E5',
-                      color: 'white',
-                      borderRadius: '0.5rem',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem',
-                      fontWeight: '500',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.background = '#4338CA'}
-                    onMouseOut={(e) => e.currentTarget.style.background = '#4F46E5'}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                      <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                    Update Photo
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h4 style={{
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  fontSize: '1rem',
-                  fontWeight: '500',
-                  marginBottom: '1rem',
-                }}>Personal Information</h4>
-                
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontSize: '0.875rem',
-                    marginBottom: '0.5rem',
-                  }}>Name</label>
-                  <input
-                    type="text"
-                    value={adminProfile.name}
-                    onChange={(e) => setAdminProfile(prev => ({ ...prev, name: e.target.value }))}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '0.875rem',
-                    }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontSize: '0.875rem',
-                    marginBottom: '0.5rem',
-                  }}>Email</label>
-                  <input
-                    type="email"
-                    value={adminProfile.email}
-                    onChange={(e) => setAdminProfile(prev => ({ ...prev, email: e.target.value }))}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '0.875rem',
-                    }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontSize: '0.875rem',
-                    marginBottom: '0.5rem',
-                  }}>Role</label>
-                  <input
-                    type="text"
-                    value={adminProfile.role}
-                    disabled
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      color: 'rgba(255, 255, 255, 0.5)',
-                      fontSize: '0.875rem',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div style={{
-              marginTop: '2rem',
-              display: 'flex',
-              justifyContent: 'flex-end',
-            }}>
-              <button
-                onClick={() => alert('Profile updated successfully!')}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: 'white',
-                  background: '#4F46E5',
-                  borderRadius: '0.5rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#4338CA'}
-                onMouseOut={(e) => e.currentTarget.style.background = '#4F46E5'}>
-                Save Changes
-              </button>
-            </div>
           </div>
         )}
       </div>
