@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Employee {
   id: string;
@@ -296,7 +297,7 @@ export default function AdminDashboard() {
             display: 'flex',
             gap: '2rem',
           }}>
-            {["overview", "employees", "attendance", "leaves", "payroll", "reports"].map((tab) => (
+            {["overview", "employees", "attendance", "leaves", "payroll", "reports", "analysis"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -823,6 +824,36 @@ export default function AdminDashboard() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {activeTab === "analysis" && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '400px',
+          }}>
+            <Link
+              href="/dashboard/analysis"
+              style={{
+                padding: '1rem 2rem',
+                fontSize: '1rem',
+                fontWeight: '500',
+                color: 'white',
+                background: 'rgba(79, 70, 229, 0.9)',
+                borderRadius: '0.5rem',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                backdropFilter: 'blur(4px)',
+                textDecoration: 'none',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(79, 70, 229, 1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(79, 70, 229, 0.9)'}
+            >
+              View Detailed Analytics
+            </Link>
           </div>
         )}
       </div>
