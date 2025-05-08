@@ -315,7 +315,7 @@ export default function AdminDashboard() {
           }}>/</span>
           <span style={{
             color: 'white',
-            fontSize: '1.25rem',
+            fontSize: '1.24rem',
             fontWeight: '500',
             textTransform: 'capitalize',
           }}>
